@@ -823,3 +823,1337 @@ Signals
 Functional APIs
 
 So if your current project uses modules, understand them well, but don't answer that NgModules are mandatory in every modern Angular application.
+
+
+**Angular Data Binding, Directives, Pipes & Dependency Injection**
+
+**Target: 4 Years Experience
+Focus: Interview + Real Project Understanding
+Stack: Angular + .NET Web API**
+
+**1. What is Interpolation?**
+**What is it?**
+
+Interpolation is used to display component data inside an Angular template.
+It uses double curly braces:
+{{ expression }}
+The data flows from:
+Component
+    ↓
+Template
+
+**Why do we use it?**
+We use interpolation when we want to display dynamic values in the UI.
+
+**Common examples:**
+Display username
+Display member name
+Display API response
+Display calculated values
+Display status messages
+
+**Real project example**
+Suppose our component receives member information from an API:
+
+memberName = 'John';
+membershipType = 'Premium';
+
+Template:
+
+<h2>{{ memberName }}</h2>
+<p>Membership: {{ membershipType }}</p>
+
+The UI displays:
+
+John
+Membership: Premium
+
+**Code example**
+
+export class MemberComponent {
+
+  memberName = 'John';
+  age = 30;
+
+}
+
+<h2>{{ memberName }}</h2>
+<p>Age: {{ age }}</p>
+
+**Interview answer**
+Interpolation is an Angular template syntax used to display component data in the HTML using double curly braces. It is mainly used for one-way data flow from the component to the template.
+
+**Common mistake**
+
+❌ Saying interpolation can be used for everything.
+
+**For example:**
+
+<button disabled="{{ isDisabled }}">
+Although Angular can evaluate interpolation in many attributes, property binding is the clearer and preferred approach for DOM properties:
+<button [disabled]="isDisabled">
+
+**2. What is Property Binding?**
+**What is it?**
+
+Property binding allows us to bind a component value to a DOM element property or Angular component property.
+Syntax:
+[property]="expression"
+
+**Data flows:**
+
+Component
+    ↓
+Template
+
+**Why do we use it?**
+We use property binding when a value needs to dynamically control an element.
+
+**Examples:**
+
+Disable a button
+Set an image source
+Set input value
+Control visibility/state
+Pass data to a child component
+Real project example
+
+Suppose a Save button should be disabled while an API request is running.
+isSaving = true;
+
+Template:
+
+<button [disabled]="isSaving">
+    Save Member
+</button>
+
+When:
+
+isSaving = true
+
+the button becomes disabled.
+
+**Code example**
+
+isDisabled = true;
+imageUrl = 'assets/member.png';
+
+<button [disabled]="isDisabled">
+    Save
+</button>
+
+<img [src]="imageUrl">
+
+**Interview answer**
+Property binding is used to dynamically set a DOM element or Angular component property using a value from the component. It provides one-way data flow from the component to the template.
+
+**Common mistake**
+
+Don't confuse:
+[disabled]="isDisabled"
+
+with:
+disabled="isDisabled"
+
+The second one is treated as a literal attribute value rather than Angular property binding.
+
+**3. What is Event Binding?**
+**What is it?**
+Event binding allows Angular to listen to events from the template and execute component logic.
+
+Syntax:
+
+(event)="method()"
+
+Data/event flow:
+
+Template
+    ↓
+Component
+
+**Why do we use it?**
+We use event binding to respond to user actions such as:
+    Click
+    Input
+    Change
+    Submit
+    Key press
+    Mouse events
+
+**Real project example**
+When the user clicks the Delete button:
+
+<button (click)="deleteMember()">
+    Delete
+</button>
+
+Angular calls:
+
+deleteMember() {
+    // Delete member logic
+}
+
+**Code example**
+
+deleteMember() {
+    console.log('Member deleted');
+}
+
+<button (click)="deleteMember()">
+    Delete
+</button>
+
+You can also access the event:
+
+<input (input)="onInput($event)">
+
+onInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    console.log(value);
+}
+
+**Interview answer**
+
+Event binding allows the Angular template to communicate user or DOM events to the component. It is represented using parentheses and is commonly used for events such as click, input, change, and submit.
+
+**Common mistake**
+
+❌ Thinking (click) is a function.
+
+It is event binding that tells Angular which component method should execute when the click event occurs.
+
+**4. What is Two-Way Data Binding?
+What is it?**
+Two-way data binding means that data can flow in both directions:
+
+Component
+    ↕
+Template
+
+A common Angular syntax is:
+
+[(ngModel)]
+
+This is often called banana-in-a-box syntax.
+
+**Why do we use it?**
+It is useful when the UI and component property need to stay synchronized.
+
+**Common example:**
+    Forms
+    Search fields
+    Editable values
+    User input
+
+**Real project example**
+Suppose we have an edit-member screen.
+
+memberName = 'John';
+
+Template:
+
+<input [(ngModel)]="memberName">
+
+<p>{{ memberName }}</p>
+
+If the user changes:
+
+John → Jahanvi
+
+the component's memberName is also updated.
+
+**Code example**
+
+memberName = '';
+
+<input [(ngModel)]="memberName">
+
+<p>Hello {{ memberName }}</p>
+
+**Interview answer**
+
+Two-way data binding synchronizes a value between the component and the template. When the component value changes, the UI updates, and when the user changes the UI value, the component value is updated. In template-driven forms, [(ngModel)] is commonly used for this.
+
+**Common mistake**
+
+Don't say:
+Angular always uses two-way binding.
+Angular supports multiple binding patterns. One-way binding is often preferred where possible because it makes data flow easier to understand.
+
+**5. What is ngModel?**
+**What is it?**
+ngModel is an Angular directive commonly used for two-way data binding in template-driven forms.
+
+Syntax:
+[(ngModel)]="property"
+
+**Why do we use it?**
+ngModel helps synchronize form controls with component properties.
+It can also participate in Angular's template-driven form features such as validation and form state.
+
+**Real project example**
+
+Member registration form:
+
+<input
+  type="text"
+  [(ngModel)]="member.name">
+
+Component:
+
+member = {
+    name: ''
+};
+
+When the user types a name, member.name is updated.
+
+**Code example**
+memberName = '';
+
+<label>Member Name</label>
+
+<input
+  type="text"
+  [(ngModel)]="memberName">
+
+<p>Entered: {{ memberName }}</p>
+
+Interview answer
+
+ngModel is an Angular directive used primarily in template-driven forms to bind form controls to component properties. When used with [(ngModel)], it provides two-way data binding.
+
+**Common mistake**
+
+❌ Saying:
+ngModel is only for two-way binding.
+It can also be used as:
+[ngModel]="memberName"
+
+or:
+
+(ngModelChange)="onNameChange($event)"
+But [(ngModel)] combines the two.
+
+**6. What is a Directive?**
+**What is it?**
+A directive is a class that allows us to add behavior to DOM elements or change how Angular handles them.
+
+**Angular directives can be used to:**
+Change the appearance of an element.
+Change element behavior.
+Dynamically create/remove elements.
+Respond to changes.
+Reuse DOM-related behavior.
+
+**Why do we use it?**
+Directives allow us to add reusable behavior to HTML elements without creating a complete component.
+
+**Real project example**
+Suppose inactive members should appear differently.
+
+**We can use:**
+
+<div [ngClass]="{'inactive': !member.isActive}">
+    {{ member.name }}
+</div>
+Here ngClass changes the CSS classes based on the member's state.
+
+**Code example**
+
+<p *ngIf="isLoggedIn">
+    Welcome back!
+</p>
+Here ngIf controls whether the element exists in the rendered view.
+
+**Interview answer**
+
+A directive is a class that adds behavior or changes the structure or appearance of DOM elements. Angular provides built-in directives such as ngClass and ngStyle, and developers can also create custom directives.
+
+**Common mistake**
+❌ Saying:
+Every directive is a component.
+A component is a specialized Angular construct with a template. A directive generally attaches behavior to an existing element.
+
+**7. Difference Between Structural and Attribute Directives**
+**What is it?**
+
+Angular directives are commonly discussed as:
+
+Structural Directives
+Attribute Directives
+
+**Why do we use it?**
+The key difference is what they change.
+
+**Structural Directive**
+A structural directive changes the structure of the DOM/view.
+Examples in traditional Angular syntax:
+
+*ngIf
+*ngFor
+
+They can add/remove/repeat views.
+
+**Attribute Directive**
+An attribute directive changes the appearance or behavior of an existing element.
+
+**Examples:**
+
+ngClass
+ngStyle
+
+**Real project example**
+
+**Structural**
+Show member only when active:
+
+<div *ngIf="member.isActive">
+    {{ member.name }}
+</div>
+
+The view is conditionally created.
+
+**Attribute**
+
+Change the class:
+
+<div [ngClass]="{
+    'active': member.isActive,
+    'inactive': !member.isActive
+}">
+    {{ member.name }}
+</div>
+
+The element remains, but its styling changes.
+
+**Code example**
+Type
+Purpose
+Examples
+Structural
+Changes DOM/view structure
+*ngIf, *ngFor
+Attribute
+Changes appearance/behavior
+ngClass, ngStyle
+
+**Interview answer**
+
+**Structural directives change the structure of the rendered view by adding, removing, or repeating elements. Attribute directives modify the behavior or appearance of an existing element. Traditional examples are ngIf and ngFor for structural behavior, and ngClass and ngStyle for attribute behavior.
+
+**Common mistake**
+❌ Saying structural directives only hide elements.
+For example, *ngFor doesn't simply hide elements; it creates multiple views based on a collection.
+
+**8. What is *ngIf?**
+**What is it?**
+
+*ngIf is the traditional Angular structural directive used to conditionally render a template.
+
+**Example:**
+<div *ngIf="isLoggedIn">
+    Welcome!
+</div>
+
+If:
+
+isLoggedIn = true;
+
+the content is rendered.
+
+If:
+
+isLoggedIn = false;
+
+the view is not rendered.
+
+**Why do we use it?**
+**Common uses:**
+    Show/hide sections.
+    Display loading messages.
+    Show error messages.
+    Display content based on permissions.
+    Show buttons based on user roles.
+
+**Real project example**
+
+Display an Edit button only when the member is active:
+<button *ngIf="member.isActive">
+    Edit
+</button>
+
+**Code example**
+
+isLoading = true;
+<div *ngIf="isLoading">
+    Loading members...
+</div>
+
+**Interview answer**
+*Traditionally, ngIf is a structural directive used to conditionally add or remove a view from the rendered DOM based on an expression. In modern Angular, the equivalent built-in control-flow syntax is @if.
+
+**Common mistake**
+
+Don't say:
+*ngIf just changes CSS display to none.
+It is fundamentally about conditional view rendering, not simply setting CSS.
+
+**9. What is *ngFor?**
+**What is it?**
+*ngFor is the traditional Angular structural directive used to iterate over a collection and create a view for each item.
+
+**Why do we use it?**
+We use it to display lists such as:
+    Members
+    Products
+    Orders
+    Employees
+    Transactions
+
+**Real project example**
+Suppose the API returns:
+
+members = [
+    { id: 1, name: 'John' },
+    { id: 2, name: 'David' },
+    { id: 3, name: 'Sarah' }
+];
+
+Template:
+
+<div *ngFor="let member of members">
+    {{ member.name }}
+</div>
+
+Output:
+
+John
+David
+Sarah
+
+Code example
+
+<ul>
+    <li *ngFor="let member of members">
+        {{ member.name }}
+    </li>
+</ul>
+
+In older Angular versions, you may also see:
+
+*ngFor="let member of members; index as i"
+
+**Interview answer**
+*Traditionally, ngFor is a structural directive used to iterate over a collection and create a template instance for each item. In modern Angular, @for is the newer built-in control-flow syntax.
+
+**Common mistake**
+❌ Using *ngFor without considering performance for large lists.
+For large collections, Angular's modern @for syntax and appropriate tracking can help Angular efficiently identify which items changed.
+
+**10. What is ngClass?**
+**What is it?**
+ngClass is an Angular attribute directive used to dynamically add or remove CSS classes.
+
+**Why do we use it?**
+It is useful when styling depends on application state.
+
+**Examples:**
+Active/inactive
+Success/error
+Selected/unselected
+Valid/invalid
+
+**Real project example**
+member.isActive = true;
+
+<div
+  [ngClass]="{
+    'active-member': member.isActive,
+    'inactive-member': !member.isActive
+  }">
+    {{ member.name }}
+</div>
+
+Code example
+
+<div [ngClass]="currentClass">
+    Member
+</div>
+
+Component:
+
+currentClass = 'active-member';
+
+**Interview answer**
+ngClass is an Angular attribute directive used to dynamically add or remove CSS classes based on component data or conditions.
+
+**Common mistake**
+For a single simple class, [class.someClass] may be simpler:
+<div [class.active]="member.isActive">
+Use ngClass when you need more dynamic class handling.
+
+**11. What is ngStyle?**
+**What is it?**
+ngStyle is an Angular attribute directive used to dynamically set inline CSS styles.
+
+**Why do we use it?**
+We use it when styling depends dynamically on component data.
+
+**Real project example**
+Display membership status with different styling:
+
+<div
+  [ngStyle]="{
+    'font-size.px': fontSize,
+    'font-weight': 'bold'
+  }">
+    Premium Member
+</div>
+
+**Code example**
+
+fontSize = 18;
+
+<p [ngStyle]="{
+    'font-size.px': fontSize
+}">
+    Member Details
+</p>
+
+**Interview answer**
+ngStyle is an Angular attribute directive used to dynamically apply inline styles based on component properties or expressions.
+
+**Common mistake**
+Don't use ngStyle for every styling requirement.
+For static styling, normal CSS classes are generally cleaner:
+<div class="member-card">
+Use dynamic class/style binding when the value actually depends on application state.
+
+**12. What is a Pipe?**
+**What is it?**
+A pipe transforms data in an Angular template for display without changing the original component data.
+
+**Syntax:**
+
+{{ value | pipeName }}
+
+Angular provides built-in pipes such as:
+
+date
+currency
+uppercase
+lowercase
+number
+percent
+json
+
+**Why do we use it?**
+Pipes are useful for presentation formatting.
+
+**For example:**
+2026-10-06
+can be displayed as:
+06/10/2026
+
+**Real project example**
+Display membership registration date:
+
+<p>
+    Joined: {{ member.joinedDate | date:'dd/MM/yyyy' }}
+</p>
+
+Display membership fee:
+
+<p>
+    Fee: {{ member.fee | currency:'INR' }}
+</p>
+
+Code example
+
+<p>{{ member.name | uppercase }}</p>
+
+<p>{{ member.joinedDate | date:'dd/MM/yyyy' }}</p>
+
+<p>{{ member.fee | currency:'INR' }}</p>
+
+**Interview answer**
+A pipe transforms data for presentation in an Angular template. Angular provides built-in pipes such as date, currency, uppercase, and number, and we can also create custom pipes for application-specific transformations.
+
+**Common mistake**
+❌ Using pipes for complex business logic.
+
+Pipes should generally focus on presentation transformation, not major business operations.
+
+**13. What is a Custom Pipe?**
+**What is it?**
+
+A custom pipe is a pipe created by the developer for application-specific data transformation.
+We create one using the @Pipe decorator.
+
+**Why do we use it?**
+
+When Angular's built-in pipes don't meet our requirement, we can create our own.
+
+**Real project example**
+
+Suppose our application stores membership status as:
+
+A
+I
+
+But the UI should display:
+
+Active
+Inactive
+
+A custom pipe can handle this transformation.
+
+Code example
+
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'membershipStatus'
+})
+export class MembershipStatusPipe implements PipeTransform {
+
+  transform(status: string): string {
+    return status === 'A' ? 'Active' : 'Inactive';
+  }
+
+}
+
+Template:
+
+<p>
+    Status: {{ member.status | membershipStatus }}
+</p>
+
+**Interview answer**
+A custom pipe is a developer-created pipe used to perform application-specific presentation transformations that are not provided by Angular's built-in pipes.
+
+**Common mistake**
+Don't put complex business logic or API calls inside a pipe.
+A pipe should generally remain focused on transforming data for display.
+
+**14. What is a Pure vs Impure Pipe?**
+**What is it?**
+Angular pipes are pure by default.
+The difference is related to when Angular executes the pipe.
+
+**Pure Pipe**
+A pure pipe runs when Angular detects a change to the pipe's input value or its input arguments.
+
+**Example:**
+
+@Pipe({
+  name: 'membershipStatus',
+  pure: true
+})
+
+Pure pipes are generally more efficient because Angular doesn't need to execute them on every change-detection cycle.
+
+**Impure Pipe**
+
+An impure pipe is declared with:
+
+@Pipe({
+  name: 'myPipe',
+  pure: false
+})
+
+Angular may execute it during every change-detection cycle.
+
+**Why do we use them?**
+Pure pipes are preferred for most transformations because they provide better performance and predictable behavior.
+Impure pipes are useful when the output needs to respond to changes that Angular's normal pure-pipe input checking would not detect, such as certain in-place mutations.
+
+**Real project example**
+Suppose we have:
+
+members = [
+    { name: 'John' },
+    { name: 'David' }
+];
+
+A pure pipe works well when a new array reference is supplied:
+this.members = [...this.members, newMember];
+However, if we mutate the existing array:
+this.members.push(newMember);
+the array reference remains the same.
+This is one reason understanding immutability/reference changes matters when working with pure pipes.
+
+**Code example**
+
+**Pure:**
+
+@Pipe({
+  name: 'uppercaseName',
+  pure: true
+})
+export class UppercaseNamePipe implements PipeTransform {
+
+  transform(name: string): string {
+    return name.toUpperCase();
+  }
+
+}
+
+**Impure:**
+
+@Pipe({
+  name: 'memberFilter',
+  pure: false
+})
+export class MemberFilterPipe implements PipeTransform {
+
+  transform(members: any[], search: string): any[] {
+    return members.filter(x =>
+      x.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+
+}
+
+**Interview answer**
+Angular pipes are pure by default. A pure pipe is evaluated when its input value or arguments change, while an impure pipe can be evaluated during every change-detection cycle. Pure pipes are generally preferred for performance, and impure pipes should be used carefully.
+
+**Common mistake**
+❌ Saying:
+Pure pipes run only once.
+They don't necessarily run only once. They run when Angular determines their input or arguments have changed.
+
+**15. What is Dependency Injection in Angular?**
+**What is it?**
+
+Dependency Injection (DI) is a design pattern where a class receives the objects/services it depends on instead of creating them itself.
+Without DI:
+
+export class MemberComponent {
+
+  service = new MemberService();
+
+}
+
+With DI:
+
+export class MemberComponent {
+
+  constructor(private memberService: MemberService) {}
+
+}
+
+Angular's DI system provides the required dependency.
+
+**Why do we use it?**
+DI provides:
+Loose coupling
+Reusability
+Testability
+Centralized dependency management
+Easier maintenance
+
+**Real project example**
+A component should not directly create an API service.
+
+**Instead:**
+MemberComponent
+      ↓
+MemberService
+      ↓
+HttpClient
+      ↓
+.NET API
+
+Angular injects MemberService into MemberComponent.
+
+**Code example**
+
+Service:
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+
+  getMembers() {
+    // API call
+  }
+
+}
+
+Component:
+
+export class MemberComponent {
+
+  constructor(
+    private memberService: MemberService
+  ) {}
+
+}
+
+Angular creates/provides the service according to its DI configuration.
+
+**Interview answer**
+Dependency Injection is a design pattern used by Angular to provide a class with its required dependencies rather than having the class create them directly. Angular has a built-in hierarchical DI system, which improves loose coupling, reusability, maintainability, and testability.
+
+**Common mistake**
+❌ Saying:
+DI means creating an object inside the constructor.
+The important concept is that the dependency is provided by Angular's DI system, rather than manually creating it with new.
+
+**16. What is a Service in Angular?**
+**What is it?**
+
+A service is a TypeScript class used to encapsulate reusable application logic or functionality.
+
+**Services commonly handle:**
+API calls
+Business-related client logic
+Shared data
+Authentication
+Logging
+State-related functionality
+
+**Why do we use it?**
+Services help keep components focused on UI responsibilities.
+Instead of putting API calls directly inside a component:
+
+Component
+    ↓
+Service
+    ↓
+HTTP API
+
+**Real project example**
+
+For a membership application:
+MemberComponent
+       ↓
+MemberService
+       ↓
+HttpClient
+       ↓
+.NET Web API
+       ↓
+MySQL
+
+MemberService can contain methods such as:
+
+getMembers()
+getMemberById()
+addMember()
+updateMember()
+deleteMember()
+
+**Code example**
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+
+  constructor(private http: HttpClient) {}
+
+  getMembers() {
+    return this.http.get('/api/members');
+  }
+
+  deleteMember(id: number) {
+    return this.http.delete(`/api/members/${id}`);
+  }
+
+}
+
+Component:
+
+export class MemberComponent {
+
+  constructor(
+    private memberService: MemberService
+  ) {}
+
+  loadMembers() {
+    this.memberService.getMembers()
+      .subscribe(data => {
+        console.log(data);
+      });
+  }
+
+}
+
+**Interview answer**
+
+An Angular service is a reusable class that encapsulates functionality that should be shared or separated from component UI logic. A common use case is placing HTTP/API communication in services and injecting those services into components using Angular's dependency injection system.
+
+**Common mistake**
+
+❌ Saying:
+
+Every service must call an API.
+
+Services don't have to call APIs. They can contain authentication logic, shared state, logging, calculations, or other reusable functionality.
+
+**17. What is the @Injectable Decorator?
+What is it?**
+
+@Injectable is a decorator that tells Angular that a class participates in Angular's dependency injection system.
+
+It is commonly used on services.
+
+Example:
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+
+}
+
+**Why do we use it?**
+
+It allows Angular to understand how the class should participate in dependency injection and what dependencies it may need.
+
+For example:
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+
+  constructor(private http: HttpClient) {}
+
+}
+
+Angular can resolve HttpClient and inject it into the service.
+
+**Real project example**
+A member service depends on HttpClient:
+
+MemberComponent
+       ↓
+MemberService
+       ↓
+HttpClient
+
+Angular's DI system resolves these dependencies.
+
+Code example
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+
+  constructor(
+    private http: HttpClient
+  ) {}
+
+}
+
+**Interview answer**
+@Injectable is an Angular decorator that marks a class as available for dependency injection and provides metadata Angular can use to resolve its dependencies. It is commonly used with services.
+
+**Common mistake**
+
+❌ Saying:
+
+@Injectable means the class is automatically a singleton.
+That is not the complete explanation.
+The lifetime/scope depends on where the provider is registered.
+
+**18. What is providedIn: 'root'?**
+**What is it?**
+
+When we write:
+
+@Injectable({
+  providedIn: 'root'
+})
+
+we are telling Angular to provide the service through the root injector.
+For the usual application setup, this means the service is available throughout the application and typically behaves as a singleton instance within that application's injector.
+
+**Why do we use it?**
+Benefits include:
+Application-wide availability.
+No need to manually register the service in a module's providers in the common case.
+Tree-shakable provider configuration.
+Clear service scope.
+
+**Real project example**
+
+For an application-wide authentication service:
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+
+  isLoggedIn = false;
+
+}
+
+Different components can inject the service:
+
+LoginComponent
+       ↓
+   AuthService
+       ↑
+       |
+DashboardComponent
+
+They can access the same root-provided service instance in the normal root-injector scenario.
+
+**Code example**
+
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+
+}
+
+Then:
+
+export class MemberComponent {
+
+  constructor(
+    private memberService: MemberService
+  ) {}
+
+}
+
+No manual module provider registration is needed for this root-provided service.
+
+**Interview answer**
+providedIn: 'root' registers the service with Angular's root injector. This makes the service available throughout the application and, under the root injector, normally results in one shared service instance for the application. It also supports tree-shakable provider configuration.
+
+**Common mistake**
+❌ Saying:
+providedIn: 'root' means the service is always globally available in every Angular context.
+More precisely, it registers the service with the root injector. Angular has a hierarchical dependency injection system, so a component or feature can also have a more local provider that creates a different instance within that injector scope.
+
+⭐ Important Interview Connection
+
+These concepts are strongly connected:
+
+Component
+    ↓
+Needs MemberService
+    ↓
+Dependency Injection
+    ↓
+@Injectable
+    ↓
+providedIn: 'root'
+    ↓
+Angular Root Injector
+
+And:
+
+Component
+    ↓
+Template
+    ↓
+Data Binding
+    ├── Interpolation
+    ├── Property Binding
+    ├── Event Binding
+    └── Two-Way Binding
+
+And:
+
+Template
+    ↓
+Directives
+    ├── Structural
+    │     ├── *ngIf
+    │     └── *ngFor
+    │
+    └── Attribute
+          ├── ngClass
+          └── ngStyle
+
+And:
+
+Template
+    ↓
+Pipe
+    ↓
+Display Transformation
+
+⭐ 4-Year Experience Scenario
+
+**Interviewer:**
+Your MemberComponent currently contains 500 lines of code. It makes HTTP calls, handles UI events, performs formatting, and contains authentication logic. What would you change?
+
+Good answer:
+
+I would separate responsibilities. The component should primarily handle UI-related state and interactions. I would move API communication into services, use Angular's dependency injection to inject those services, use pipes for presentation formatting, and use appropriate reusable components/directives where required. Authentication-related functionality can be handled through a dedicated authentication service and, where appropriate, HTTP interceptors or route guards.
+
+Architecture:
+
+MemberComponent
+       │
+       ├── UI state
+       ├── User interactions
+       │
+       ↓
+MemberService
+       │
+       ↓
+HttpClient
+       │
+       ↓
+.NET Web API
+
+This improves:
+Maintainability
+Testability
+Reusability
+Separation of concerns
+Readability
+
+⭐ Quick Revision Table
+
+Concept
+Main Purpose
+
+Example
+
+Interpolation
+Display component data
+{{ name }}
+
+Property Binding
+Component → UI property
+[disabled]="isSaving"
+
+Event Binding
+UI event → component
+(click)="save()"
+
+Two-Way Binding
+Component ↔ UI
+[(ngModel)]="name"
+
+ngModel
+Form control binding
+[(ngModel)]="name"
+
+Directive
+Add behavior/structure
+ngClass,ngStyle
+
+Structural Directive
+Change view structure
+*ngIf, *ngFor
+
+Attribute Directive
+Change behavior/style
+ngClass, ngStyle
+
+*ngIf
+Conditional view
+*ngIf="isActive"
+
+*ngFor
+Iterate collection
+*ngFor="let m of members"
+
+ngClass
+Dynamic CSS classes
+[ngClass]="classes"
+
+ngStyle
+Dynamic inline styles
+[ngStyle]="styles"
+
+Pipe
+Transform display data
+{{ date | date }}
+
+Custom Pipe
+Custom transformation
+membershipStatus
+
+Pure Pipe
+Runs based on input/args changes
+Default
+
+Impure Pipe
+Can run every change detection cycle
+
+pure: false
+DI
+Provides dependencies
+Inject MemberService
+
+Service
+Reusable application logic
+
+MemberService
+
+@Injectable
+
+DI metadata
+
+@Injectable()
+
+providedIn: 'root'
+
+Root injector registration
+
+Application-wide service
+
+**⭐ One-Line Interview Revision**
+
+Interpolation     → Display data
+Property Binding  → Set properties
+Event Binding     → Handle events
+Two-Way Binding   → Synchronize UI + component
+ngModel            → Form control binding
+Directive          → Add behavior/structure
+*ngIf              → Conditional rendering
+*ngFor             → List rendering
+ngClass            → Dynamic classes
+ngStyle            → Dynamic styles
+Pipe               → Transform display data
+Custom Pipe        → Custom transformation
+Pure Pipe          → Input/reference-based execution
+Impure Pipe        → Frequent change detection execution
+DI                 → Provide dependencies
+Service            → Reusable logic
+@Injectable         → DI metadata
+providedIn: root   → Root injector provider
+
+**⚠️ Modern Angular Interview Note**
+
+For a 4-year Angular interview, don't study only the older syntax.
+
+You should recognize both:
+
+Traditional syntax
+
+<div *ngIf="isActive">
+    Active
+</div>
+
+<div *ngFor="let member of members">
+    {{ member.name }}
+</div>
+
+Modern Angular control flow
+
+@if (isActive) {
+    <div>Active</div>
+}
+
+@for (member of members; track member.id) {
+    <div>{{ member.name }}</div>
+}
+
+Similarly, understand that modern Angular supports standalone components, so NgModule and AppModule are important concepts to understand, but they are no longer mandatory for every Angular application.
+
+For your interviews, be comfortable explaining why a project uses either approach rather than simply memorizing syntax.
