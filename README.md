@@ -2157,3 +2157,2187 @@ Modern Angular control flow
 Similarly, understand that modern Angular supports standalone components, so NgModule and AppModule are important concepts to understand, but they are no longer mandatory for every Angular application.
 
 For your interviews, be comfortable explaining why a project uses either approach rather than simply memorizing syntax.
+
+
+# Angular Routing, Lifecycle, Component Communication & Change Detection
+
+> **Target:** 4 Years Experience
+> **Focus:** Interview + Real Project Understanding
+> **Stack:** Angular + .NET Web API
+
+---
+
+# 1. What is Hierarchical Dependency Injection?
+
+### What is it?
+
+Angular uses a **hierarchical Dependency Injection (DI) system**, meaning dependencies can be provided at different levels of the application.
+
+A simplified hierarchy is:
+
+```text
+Root Injector
+     ↓
+Environment / Application
+     ↓
+Component Injector
+     ↓
+Child Component Injector
+```
+
+Angular looks for a requested dependency starting from the current injector and can move upward through the hierarchy to find a provider.
+
+### Why do we use it?
+
+Hierarchical DI allows us to control the **scope and lifetime of a service**.
+
+For example:
+
+- Application-wide service → root level
+- Feature-specific service → feature/application scope
+- Component-specific service → component level
+- Child component can inherit a parent-provided service
+
+This is particularly important when we need **different instances of the same service**.
+
+### Real project example
+
+Suppose `MemberService` is provided at root:
+
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class MemberService {
+}
+```
+
+Multiple components normally receive the same root-provided instance.
+
+But if we provide it at a component:
+
+```typescript
+@Component({
+  selector: 'app-member',
+  providers: [MemberService]
+})
+export class MemberComponent {
+}
+```
+
+Angular creates a service instance associated with that component's injector.
+
+A child component can inherit that instance unless it provides its own instance.
+
+### Code example
+
+```typescript
+@Component({
+  selector: 'app-member',
+  providers: [MemberService],
+  templateUrl: './member.component.html'
+})
+export class MemberComponent {
+
+  constructor(private memberService: MemberService) {}
+
+}
+```
+
+### Interview answer
+
+> **Angular uses hierarchical dependency injection, where providers can exist at different levels such as the root or component level. Angular resolves a dependency through the injector hierarchy, which allows us to control the scope and instances of services.**
+
+### Common mistake
+
+❌ Saying:
+
+> `providedIn: 'root'` is the only way Angular provides services.
+
+Services can also be provided at more local levels, such as a component or route.
+
+---
+
+# 2. What is Angular Router?
+
+### What is it?
+
+The **Angular Router** is Angular's built-in routing system used to navigate between different views/components in a single-page application.
+
+It maps a URL to a component.
+
+For example:
+
+```text
+/members
+     ↓
+MemberListComponent
+
+/members/101
+     ↓
+MemberDetailsComponent
+
+/login
+     ↓
+LoginComponent
+```
+
+### Why do we use it?
+
+We use Angular Router to:
+
+- Navigate between pages.
+- Create application URLs.
+- Pass route parameters.
+- Protect routes.
+- Lazy-load features.
+- Handle nested routes.
+- Read query parameters.
+
+### Real project example
+
+A Membership Management application could have:
+
+```text
+/login
+/dashboard
+/members
+/members/101
+/members/add
+/reports
+```
+
+### Code example
+
+```typescript
+const routes: Routes = [
+  {
+    path: 'members',
+    component: MemberListComponent
+  },
+  {
+    path: 'members/:id',
+    component: MemberDetailsComponent
+  }
+];
+```
+
+### Interview answer
+
+> **Angular Router is the built-in routing mechanism used to map application URLs to components and manage navigation in a single-page application without performing a full browser page reload.**
+
+### Common mistake
+
+❌ Saying Angular Router calls the backend API.
+
+Routing controls **frontend navigation**. Services/HttpClient are responsible for API communication.
+
+---
+
+# 3. What is a Route Guard?
+
+### What is it?
+
+A **route guard** controls whether navigation to or from a route should be allowed.
+
+It is commonly used for:
+
+- Authentication
+- Authorization
+- Unsaved form changes
+- Permission checks
+
+### Why do we use it?
+
+Suppose an unauthenticated user tries to access:
+
+```text
+/reports
+```
+
+The application can check whether the user is authenticated.
+
+```text
+User
+ ↓
+/reports
+ ↓
+Auth Guard
+ ↓
+Authenticated?
+ ├── Yes → Reports
+ └── No  → Login
+```
+
+### Real project example
+
+Only logged-in users should access the Member Management screen.
+
+```typescript
+canActivate: [authGuard]
+```
+
+The guard checks whether the user has a valid authentication state/token before allowing navigation.
+
+### Code example
+
+Modern functional guard:
+
+```typescript
+export const authGuard: CanActivateFn = () => {
+
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isLoggedIn()) {
+    return true;
+  }
+
+  return router.createUrlTree(['/login']);
+};
+```
+
+Route:
+
+```typescript
+{
+  path: 'members',
+  component: MemberListComponent,
+  canActivate: [authGuard]
+}
+```
+
+### Interview answer
+
+> **A route guard controls whether navigation to or from a route is allowed. It is commonly used for authentication, authorization, unsaved changes, and other navigation-related checks.**
+
+### Common mistake
+
+❌ Saying:
+
+> Route guards provide complete backend security.
+
+They are a **frontend navigation control**. Backend APIs must still enforce authentication and authorization.
+
+---
+
+# 4. Types of Route Guards
+
+### What is it?
+
+Angular provides different guard interfaces/functions for different navigation scenarios.
+
+Important ones include:
+
+```text
+CanActivate
+CanActivateChild
+CanDeactivate
+CanMatch
+```
+
+You may also encounter:
+
+```text
+CanLoad
+```
+
+in older Angular applications.
+
+### Why do we use it?
+
+Different guards solve different problems.
+
+| Guard              | Purpose                               |
+| ------------------ | ------------------------------------- |
+| `CanActivate`      | Can the user enter a route?           |
+| `CanActivateChild` | Can the user enter child routes?      |
+| `CanDeactivate`    | Can the user leave a route?           |
+| `CanMatch`         | Should a route be considered/matched? |
+| `CanLoad`          | Older lazy-loading guard              |
+
+### Real project example
+
+#### CanActivate
+
+Protect `/admin`.
+
+```text
+User → /admin → Auth check → Allow/Deny
+```
+
+#### CanDeactivate
+
+User edits a member:
+
+```text
+Edit Member
+     ↓
+Changes not saved
+     ↓
+User clicks another page
+     ↓
+"Are you sure?"
+```
+
+### Code example
+
+```typescript
+{
+  path: 'edit-member',
+  component: EditMemberComponent,
+  canDeactivate: [unsavedChangesGuard]
+}
+```
+
+### Interview answer
+
+> **CanActivate controls access to a route, CanActivateChild controls access to child routes, CanDeactivate controls whether a user can leave a route, and CanMatch controls whether a route can be matched. In older Angular applications, CanLoad may also be seen for lazy-loaded modules.**
+
+### Common mistake
+
+Don't confuse:
+
+```text
+CanActivate → Enter route
+CanDeactivate → Leave route
+```
+
+---
+
+# 5. What is Lazy Loading in Angular?
+
+### What is it?
+
+**Lazy loading** means loading a feature only when it is required instead of loading the entire feature when the application initially starts.
+
+Without lazy loading:
+
+```text
+Application starts
+     ↓
+Load everything
+     ↓
+Display application
+```
+
+With lazy loading:
+
+```text
+Application starts
+     ↓
+Load required code
+     ↓
+User opens Reports
+     ↓
+Load Reports feature
+```
+
+### Why do we use it?
+
+Lazy loading can:
+
+- Reduce initial JavaScript bundle size.
+- Improve initial application startup.
+- Improve performance for large applications.
+- Separate large application features.
+
+### Real project example
+
+Suppose our application contains:
+
+```text
+Dashboard
+Members
+Reports
+Admin
+```
+
+The Reports section may be large and not used by every user.
+
+We can lazy-load it only when the user navigates to:
+
+```text
+/reports
+```
+
+### Code example
+
+Modern standalone route:
+
+```typescript
+{
+  path: 'reports',
+  loadComponent: () =>
+    import('./reports/reports.component')
+      .then(m => m.ReportsComponent)
+}
+```
+
+A lazy-loaded route can also load a group of routes:
+
+```typescript
+{
+  path: 'members',
+  loadChildren: () =>
+    import('./members/member.routes')
+      .then(m => m.MEMBER_ROUTES)
+}
+```
+
+### Interview answer
+
+> **Lazy loading is a technique where Angular loads a feature's code only when the user navigates to that feature instead of loading everything during the initial application startup. It helps reduce the initial bundle and can improve startup performance.**
+
+### Common mistake
+
+❌ Saying:
+
+> Lazy loading means loading data from the API later.
+
+Lazy loading primarily refers to **loading application code/features on demand**.
+
+---
+
+# 6. What is a Route Resolver?
+
+### What is it?
+
+A **route resolver** allows Angular to retrieve required data before a route is activated.
+
+The route waits for the resolver's result before completing navigation.
+
+### Why do we use it?
+
+It is useful when a page cannot be meaningfully displayed until required data is available.
+
+For example:
+
+```text
+Navigate to /members/101
+          ↓
+Resolver
+          ↓
+Get Member 101
+          ↓
+Route activated
+          ↓
+MemberDetailsComponent
+```
+
+### Real project example
+
+When opening:
+
+```text
+/members/101
+```
+
+we may want the member details to be available immediately when the component loads.
+
+### Code example
+
+```typescript
+export const memberResolver: ResolveFn<Member> = (route) => {
+
+  const service = inject(MemberService);
+  const id = Number(route.paramMap.get('id'));
+
+  return service.getMemberById(id);
+};
+```
+
+Route:
+
+```typescript
+{
+  path: 'members/:id',
+  component: MemberDetailsComponent,
+  resolve: {
+    member: memberResolver
+  }
+}
+```
+
+The component can access the resolved data through route data.
+
+### Interview answer
+
+> **A route resolver retrieves required data before a route is activated. It is useful when the component needs data available at the time navigation completes, such as loading member details before displaying the member details page.**
+
+### Common mistake
+
+❌ Saying:
+
+> Resolver is required for every API call.
+
+It is optional. Many applications simply load data inside the component/service.
+
+---
+
+# 7. What is RouterOutlet?
+
+### What is it?
+
+`RouterOutlet` is a directive that acts as a **placeholder where Angular renders the component associated with the current route**.
+
+### Why do we use it?
+
+It provides the location where routed components should appear.
+
+### Real project example
+
+Suppose `app.component.html` contains:
+
+```html
+<app-header></app-header>
+
+<router-outlet></router-outlet>
+
+<app-footer></app-footer>
+```
+
+When the URL is:
+
+```text
+/members
+```
+
+Angular renders:
+
+```text
+MemberListComponent
+```
+
+inside:
+
+```html
+<router-outlet>
+```
+
+### Code example
+
+```html
+<header>
+    Membership Management
+</header>
+
+<router-outlet></router-outlet>
+```
+
+### Interview answer
+
+> **RouterOutlet is a directive that acts as a placeholder in the application template where Angular renders the component associated with the currently activated route.**
+
+### Common mistake
+
+❌ Thinking `router-outlet` is a component.
+
+It is a directive provided by Angular Router.
+
+---
+
+# 8. What is RouterLink?
+
+### What is it?
+
+`RouterLink` is an Angular directive used to navigate between routes from the template.
+
+### Why do we use it?
+
+It allows navigation without manually manipulating the browser URL.
+
+### Real project example
+
+```html
+<a routerLink="/members">
+    Members
+</a>
+```
+
+When the user clicks it, Angular navigates to:
+
+```text
+/members
+```
+
+without performing a full browser page reload.
+
+### Code example
+
+```html
+<a routerLink="/dashboard">
+    Dashboard
+</a>
+
+<a routerLink="/members">
+    Members
+</a>
+```
+
+Route parameters:
+
+```html
+<a [routerLink]="['/members', member.id]">
+    View Member
+</a>
+```
+
+### Interview answer
+
+> **RouterLink is an Angular directive used in templates to navigate to application routes. It works with Angular Router and enables SPA navigation without a full page reload.**
+
+### Common mistake
+
+Don't confuse:
+
+```html
+routerLink="/members"
+```
+
+with:
+
+```typescript
+this.router.navigate(['/members']);
+```
+
+`routerLink` is commonly used in templates, while `Router.navigate()` is commonly used from TypeScript code.
+
+---
+
+# 9. What is ActivatedRoute?
+
+### What is it?
+
+`ActivatedRoute` provides information about the **currently activated route**.
+
+It can be used to access:
+
+- Route parameters
+- Query parameters
+- Route data
+- Resolved data
+- Parent/child route information
+
+### Why do we use it?
+
+Suppose the URL is:
+
+```text
+/members/101
+```
+
+We need to retrieve:
+
+```text
+101
+```
+
+from the route.
+
+### Real project example
+
+Route:
+
+```typescript
+{
+  path: 'members/:id',
+  component: MemberDetailsComponent
+}
+```
+
+Component:
+
+```typescript
+constructor(private route: ActivatedRoute) {}
+
+ngOnInit() {
+  const id = this.route.snapshot.paramMap.get('id');
+}
+```
+
+### Code example
+
+For a reactive approach:
+
+```typescript
+this.route.paramMap.subscribe(params => {
+  const id = params.get('id');
+});
+```
+
+For query parameters:
+
+```text
+/members?page=2
+```
+
+```typescript
+this.route.queryParamMap.subscribe(params => {
+  const page = params.get('page');
+});
+```
+
+### Interview answer
+
+> **ActivatedRoute provides information about the currently activated route, including route parameters, query parameters, route data, and resolved data. It is commonly used when a component needs information from the URL.**
+
+### Common mistake
+
+Don't confuse:
+
+```text
+ActivatedRoute → Read current route information
+Router → Navigate/change routes
+```
+
+---
+
+# 10. What are Angular Lifecycle Hooks?
+
+### What is it?
+
+Angular lifecycle hooks are methods that allow a component or directive to execute code at specific stages of its lifecycle.
+
+Simplified lifecycle:
+
+```text
+Create
+  ↓
+Input changes
+  ↓
+Initialization
+  ↓
+View initialization
+  ↓
+Changes
+  ↓
+Destroy
+```
+
+Common hooks include:
+
+```text
+ngOnChanges
+ngOnInit
+ngDoCheck
+ngAfterContentInit
+ngAfterContentChecked
+ngAfterViewInit
+ngAfterViewChecked
+ngOnDestroy
+```
+
+### Why do we use it?
+
+Lifecycle hooks allow us to perform actions at the appropriate stage.
+
+Examples:
+
+- Initialize data
+- Respond to input changes
+- Access child views
+- Clean up subscriptions
+- Release resources
+
+### Real project example
+
+A member component may:
+
+```text
+ngOnInit
+   ↓
+Load member data
+
+ngAfterViewInit
+   ↓
+Access a ViewChild
+
+ngOnDestroy
+   ↓
+Cleanup subscriptions/resources
+```
+
+### Interview answer
+
+> **Angular lifecycle hooks are methods that allow us to execute code at specific stages in the lifecycle of a component or directive, such as initialization, input changes, view initialization, and destruction.**
+
+### Common mistake
+
+❌ Putting every piece of logic inside `ngOnInit`.
+
+Each hook has a specific purpose.
+
+---
+
+# 11. Explain ngOnInit
+
+### What is it?
+
+`ngOnInit` is called after Angular has initialized the component's input properties.
+
+It is commonly used for **initialization logic**.
+
+### Why do we use it?
+
+Typical uses include:
+
+- Initial API calls
+- Initializing component data
+- Setting up initial state
+- Reading initial route information
+
+### Real project example
+
+When the Member List page loads:
+
+```text
+Component created
+      ↓
+ngOnInit()
+      ↓
+Call MemberService
+      ↓
+Get members
+      ↓
+Display members
+```
+
+### Code example
+
+```typescript
+export class MemberListComponent
+  implements OnInit {
+
+  members: Member[] = [];
+
+  constructor(
+    private memberService: MemberService
+  ) {}
+
+  ngOnInit(): void {
+
+    this.memberService.getMembers()
+      .subscribe(data => {
+        this.members = data;
+      });
+
+  }
+}
+```
+
+### Interview answer
+
+> **ngOnInit is a lifecycle hook called after Angular initializes the component's input properties. It is commonly used for initialization logic such as loading initial data or setting up component state.**
+
+### Common mistake
+
+Don't use the constructor as a replacement for `ngOnInit`.
+
+A constructor is primarily for class construction and dependency injection. Initialization logic that depends on Angular-initialized inputs generally belongs in lifecycle hooks.
+
+---
+
+# 12. Explain ngOnChanges
+
+### What is it?
+
+`ngOnChanges` is called when one or more **data-bound input properties** change.
+
+It is especially useful for parent-to-child communication using `@Input`.
+
+### Why do we use it?
+
+Suppose a parent passes a member to a child:
+
+```text
+Parent
+  ↓ @Input
+Child
+```
+
+When the parent changes the input value, the child can react using `ngOnChanges`.
+
+### Real project example
+
+Parent:
+
+```html
+<app-member-details
+  [member]="selectedMember">
+</app-member-details>
+```
+
+Child:
+
+```typescript
+@Input() member!: Member;
+```
+
+When `selectedMember` changes, `ngOnChanges` can respond.
+
+### Code example
+
+```typescript
+export class MemberDetailsComponent
+  implements OnChanges {
+
+  @Input() member!: Member;
+
+  ngOnChanges(changes: SimpleChanges): void {
+
+    if (changes['member']) {
+      console.log('Member changed');
+    }
+
+  }
+}
+```
+
+### Interview answer
+
+> **ngOnChanges is called when Angular detects changes to data-bound input properties of a component or directive. It is commonly used when a child component needs to react when a parent changes an @Input value.**
+
+### Common mistake
+
+❌ Saying `ngOnChanges` runs whenever any component variable changes.
+
+It is specifically related to **input-bound property changes** detected by Angular.
+
+---
+
+# 13. Explain ngOnDestroy
+
+### What is it?
+
+`ngOnDestroy` is called just before Angular destroys a component or directive.
+
+### Why do we use it?
+
+It is mainly used for cleanup.
+
+Examples:
+
+- Unsubscribe from manually managed subscriptions.
+- Clear timers.
+- Remove event listeners.
+- Release resources.
+- Stop long-running processes.
+
+### Real project example
+
+Suppose a component subscribes to a manually managed Observable:
+
+```typescript
+subscription = this.service.data$
+  .subscribe(data => {
+    // process data
+  });
+```
+
+Before the component is destroyed:
+
+```typescript
+ngOnDestroy() {
+  this.subscription.unsubscribe();
+}
+```
+
+### Code example
+
+```typescript
+export class MemberComponent
+  implements OnDestroy {
+
+  private subscription?: Subscription;
+
+  ngOnDestroy(): void {
+
+    this.subscription?.unsubscribe();
+
+  }
+}
+```
+
+Modern Angular also provides utilities such as `takeUntilDestroyed()` that can reduce manual cleanup code.
+
+### Interview answer
+
+> **ngOnDestroy is called immediately before Angular destroys a component or directive. It is commonly used to clean up manually managed subscriptions, timers, event listeners, and other resources.**
+
+### Common mistake
+
+❌ Saying every Observable must always be manually unsubscribed.
+
+Angular-managed subscriptions such as many `async` pipe usages are handled automatically. The need for manual cleanup depends on how the subscription/resource is created.
+
+---
+
+# 14. Explain ngAfterViewInit
+
+### What is it?
+
+`ngAfterViewInit` is called after Angular has initialized the component's view and child views.
+
+### Why do we use it?
+
+It is useful when we need to interact with something that exists in the component's rendered view.
+
+A common use case is `@ViewChild`.
+
+### Real project example
+
+Suppose we have:
+
+```html
+<input #memberInput>
+```
+
+and want to access it from TypeScript after the view has been initialized.
+
+### Code example
+
+```typescript
+@ViewChild('memberInput')
+memberInput!: ElementRef<HTMLInputElement>;
+
+ngAfterViewInit(): void {
+
+  this.memberInput.nativeElement.focus();
+
+}
+```
+
+### Interview answer
+
+> **ngAfterViewInit is called after Angular has initialized the component's view and child views. It is commonly used when we need to access view-related elements or child components through ViewChild.**
+
+### Common mistake
+
+Don't access `ViewChild` in `ngOnInit` and assume the view is already initialized.
+
+---
+
+# 15. What is @Input Decorator?
+
+### What is it?
+
+`@Input` allows a **parent component to pass data to a child component**.
+
+Data flow:
+
+```text
+Parent
+   ↓
+Child
+```
+
+### Why do we use it?
+
+It allows components to communicate while keeping them reusable.
+
+### Real project example
+
+Parent displays a list and passes the selected member to a child details component.
+
+Parent:
+
+```html
+<app-member-details
+  [member]="selectedMember">
+</app-member-details>
+```
+
+Child:
+
+```typescript
+@Input() member!: Member;
+```
+
+### Code example
+
+Child:
+
+```typescript
+export class MemberDetailsComponent {
+
+  @Input() member!: Member;
+
+}
+```
+
+Parent:
+
+```html
+<app-member-details
+  [member]="selectedMember">
+</app-member-details>
+```
+
+### Interview answer
+
+> **@Input allows a parent component to pass data to a child component. It establishes one-way data flow from parent to child.**
+
+### Common mistake
+
+❌ Saying `@Input` sends data from child to parent.
+
+For child-to-parent communication, use `@Output` with an event.
+
+---
+
+# 16. What is @Output Decorator?
+
+### What is it?
+
+`@Output` allows a child component to expose an event that the parent can listen to.
+
+Data/event flow:
+
+```text
+Child
+   ↓
+Parent
+```
+
+### Why do we use it?
+
+It is commonly used when a child needs to notify its parent about an action.
+
+Examples:
+
+- Delete clicked
+- Save completed
+- Selection changed
+- Dialog closed
+
+### Real project example
+
+Child component:
+
+```text
+MemberDetailsComponent
+       ↓
+"Delete member"
+       ↓
+Parent MemberListComponent
+```
+
+### Code example
+
+Child:
+
+```typescript
+@Output() memberDeleted =
+  new EventEmitter<number>();
+
+deleteMember(id: number) {
+
+  this.memberDeleted.emit(id);
+
+}
+```
+
+Parent:
+
+```html
+<app-member-details
+  (memberDeleted)="onMemberDeleted($event)">
+</app-member-details>
+```
+
+### Interview answer
+
+> **@Output is used for child-to-parent communication. It exposes an event from the child component that the parent can subscribe to through event binding.**
+
+### Common mistake
+
+Don't confuse:
+
+```text
+@Input  → Parent → Child
+@Output → Child → Parent
+```
+
+---
+
+# 17. What is EventEmitter?
+
+### What is it?
+
+`EventEmitter` is commonly used with `@Output` to emit custom events from a child component.
+
+### Why do we use it?
+
+It allows the child to notify the parent that something happened.
+
+### Real project example
+
+Child:
+
+```typescript
+@Output()
+saved = new EventEmitter<Member>();
+```
+
+After successfully saving:
+
+```typescript
+this.saved.emit(this.member);
+```
+
+Parent can handle it:
+
+```html
+<app-member-form
+  (saved)="onMemberSaved($event)">
+</app-member-form>
+```
+
+### Code example
+
+```typescript
+@Output()
+deleted = new EventEmitter<number>();
+
+deleteMember(id: number): void {
+  this.deleted.emit(id);
+}
+```
+
+### Interview answer
+
+> **EventEmitter is used with @Output to emit custom events from a child component to its parent. The emitted value can be received by the parent through event binding.**
+
+### Common mistake
+
+❌ Using EventEmitter as a general-purpose application event bus.
+
+For component communication, `@Output` is appropriate. For broader application communication, services/signals/state-management approaches may be more suitable.
+
+---
+
+# 18. What is ViewChild?
+
+### What is it?
+
+`ViewChild` allows a component to obtain a reference to an element, directive, or child component from its own template/view.
+
+### Why do we use it?
+
+It is useful when a component needs direct access to something in its view.
+
+### Real project example
+
+Suppose the parent contains a child component:
+
+```html
+<app-member-form></app-member-form>
+```
+
+The parent can get a reference to that child:
+
+```typescript
+@ViewChild(MemberFormComponent)
+memberForm!: MemberFormComponent;
+```
+
+It can then call a public method:
+
+```typescript
+this.memberForm.resetForm();
+```
+
+### Code example
+
+Template:
+
+```html
+<input #memberNameInput>
+```
+
+Component:
+
+```typescript
+@ViewChild('memberNameInput')
+memberNameInput!: ElementRef<HTMLInputElement>;
+```
+
+After view initialization:
+
+```typescript
+ngAfterViewInit(): void {
+  this.memberNameInput.nativeElement.focus();
+}
+```
+
+### Interview answer
+
+> **ViewChild allows a component to access an element, directive, or child component from its own view. It is commonly used for view interaction, accessing child component APIs, or interacting with template elements.**
+
+### Common mistake
+
+Don't use `ViewChild` as the default way to communicate between components.
+
+For normal parent-child data flow:
+
+```text
+Parent → Child : @Input
+Child → Parent : @Output
+```
+
+Use `ViewChild` when direct view/child-instance access is actually required.
+
+---
+
+# 19. What is ContentChild?
+
+### What is it?
+
+`ContentChild` allows a component to access an element, directive, or component that has been **projected into it using content projection**.
+
+The key difference:
+
+```text
+ViewChild
+→ Component's own template
+
+ContentChild
+→ Content projected into the component
+```
+
+### Why do we use it?
+
+It is useful with reusable components that accept custom content through `ng-content`.
+
+### Real project example
+
+Reusable card component:
+
+```html
+<app-card>
+  <p>Member Details</p>
+</app-card>
+```
+
+Inside `app-card`:
+
+```html
+<div class="card">
+  <ng-content></ng-content>
+</div>
+```
+
+The projected `<p>` is **content**, not part of the card component's own template.
+
+### Code example
+
+```typescript
+@ContentChild('projectedContent')
+content!: ElementRef;
+```
+
+Projected content:
+
+```html
+<app-card>
+  <div #projectedContent>
+    Member information
+  </div>
+</app-card>
+```
+
+### Interview answer
+
+> **ContentChild is used to access content that has been projected into a component, typically through ng-content. ViewChild accesses the component's own view, while ContentChild accesses projected content.**
+
+### Common mistake
+
+The easiest way to remember:
+
+```text
+ViewChild
+→ Inside my template
+
+ContentChild
+→ Given to me by the parent through content projection
+```
+
+---
+
+# 20. What is ng-content used for?
+
+### What is it?
+
+`ng-content` is used for **content projection**.
+
+It allows a reusable component to accept HTML/content from its parent and render that content inside its own template.
+
+### Why do we use it?
+
+It helps create flexible reusable components.
+
+Instead of hardcoding everything inside a reusable component, the parent can provide custom content.
+
+### Real project example
+
+Reusable card:
+
+Parent:
+
+```html
+<app-card>
+  <h2>Member Details</h2>
+  <p>John is an active member.</p>
+</app-card>
+```
+
+Card component:
+
+```html
+<div class="card">
+  <ng-content></ng-content>
+</div>
+```
+
+Angular projects the parent-provided content into the card.
+
+### Code example
+
+```html
+<!-- card.component.html -->
+
+<div class="card">
+    <ng-content></ng-content>
+</div>
+```
+
+Usage:
+
+```html
+<app-card>
+    <h2>Premium Member</h2>
+    <p>Membership is active.</p>
+</app-card>
+```
+
+### Interview answer
+
+> **ng-content is used for content projection. It allows a parent component to pass HTML content into a reusable child component, where the child determines where that content should be rendered.**
+
+### Common mistake
+
+Don't confuse content projection with `@Input`.
+
+```text
+@Input
+→ Pass data
+
+ng-content
+→ Project content/markup
+```
+
+---
+
+# 21. What is a Template Reference Variable?
+
+### What is it?
+
+A **template reference variable** creates a reference to an element, directive, or component instance inside an Angular template.
+
+It is commonly declared using:
+
+```html
+#variableName
+```
+
+### Why do we use it?
+
+It allows us to refer to a template element directly.
+
+### Real project example
+
+```html
+<input #memberName>
+
+<button (click)="showName(memberName.value)">
+    Show Name
+</button>
+```
+
+The input can be accessed directly in the template.
+
+### Code example
+
+```html
+<input #nameInput>
+
+<button (click)="nameInput.focus()">
+    Focus Input
+</button>
+```
+
+### Interview answer
+
+> **A template reference variable provides a reference to an element, directive, or component instance within an Angular template. It is declared using the # syntax and can be used to interact with that reference from the template.**
+
+### Common mistake
+
+Don't confuse:
+
+```text
+#memberInput
+```
+
+with:
+
+```text
+@ViewChild('memberInput')
+```
+
+The first creates a template reference variable. The second allows the component class to access that template reference.
+
+---
+
+# 22. What is Change Detection in Angular?
+
+### What is it?
+
+**Change detection** is the process Angular uses to determine whether the application's data has changed and whether the UI needs to be updated.
+
+Simplified:
+
+```text
+Data changes
+     ↓
+Angular checks bindings
+     ↓
+Detects changes
+     ↓
+Updates DOM
+```
+
+### Why do we use it?
+
+Without change detection, changes in component state would not automatically appear in the UI.
+
+### Real project example
+
+Suppose:
+
+```typescript
+memberName = 'John';
+```
+
+Then:
+
+```typescript
+this.memberName = 'David';
+```
+
+Angular detects the relevant change and updates:
+
+```html
+<h2>{{ memberName }}</h2>
+```
+
+from:
+
+```text
+John
+```
+
+to:
+
+```text
+David
+```
+
+### Code example
+
+```typescript
+updateName() {
+  this.memberName = 'David';
+}
+```
+
+Template:
+
+```html
+<h2>{{ memberName }}</h2>
+
+<button (click)="updateName()">
+    Change Name
+</button>
+```
+
+### Interview answer
+
+> **Change detection is Angular's mechanism for checking whether data used by the template has changed and updating the DOM when necessary. Angular's change detection strategy determines how and when these checks are performed.**
+
+### Common mistake
+
+Don't say:
+
+> Angular updates the entire DOM every time.
+
+Angular updates the relevant parts of the rendered view based on its change-detection process.
+
+---
+
+# 23. Difference Between Default and OnPush Change Detection
+
+### What is it?
+
+Angular provides different change-detection strategies. The two commonly discussed strategies are:
+
+```text
+Default
+OnPush
+```
+
+### Default Strategy
+
+With the default strategy, Angular checks the component and its relevant view tree during normal change-detection processing.
+
+It is easier to use but can result in more checking than necessary in large applications.
+
+### OnPush Strategy
+
+`OnPush` makes Angular's checking more targeted.
+
+Example:
+
+```typescript
+@Component({
+  selector: 'app-member',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class MemberComponent {
+}
+```
+
+Angular can check the component when important triggers occur, such as:
+
+- An input reference changes.
+- An event occurs in the component/view.
+- The component is explicitly marked for checking.
+- Reactive mechanisms such as signals notify Angular.
+
+### Why do we use it?
+
+`OnPush` can improve performance in large applications by reducing unnecessary change-detection work.
+
+### Real project example
+
+Suppose we have:
+
+```text
+Dashboard
+ ├── MemberList
+ ├── MemberSummary
+ ├── Reports
+ └── Notifications
+```
+
+Using `OnPush` appropriately can help prevent unrelated updates from causing unnecessary checks throughout large component trees.
+
+### Code example
+
+```typescript
+@Component({
+  selector: 'app-member-list',
+  templateUrl: './member-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class MemberListComponent {
+
+}
+```
+
+Important example:
+
+```typescript
+this.member = {
+  ...this.member,
+  name: 'David'
+};
+```
+
+This creates a new object reference.
+
+Whereas:
+
+```typescript
+this.member.name = 'David';
+```
+
+mutates the existing object reference.
+
+Understanding **reference changes and immutability** is important when working with `OnPush`.
+
+### Interview answer
+
+> **The Default change-detection strategy performs broader checking during Angular's normal change-detection process. OnPush allows Angular to perform more targeted checks based on changes such as input reference changes, events, explicit marking, and reactive updates. OnPush can improve performance in large applications when used correctly.**
+
+### Common mistake
+
+❌ Saying:
+
+> OnPush means Angular checks the component only once.
+
+It does not. `OnPush` still allows the component to be checked when its relevant triggers occur.
+
+---
+
+# 24. What is Zone.js?
+
+### What is it?
+
+**Zone.js** is a library historically used by Angular to help detect asynchronous operations and trigger Angular change detection.
+
+Examples of asynchronous operations include:
+
+- `setTimeout`
+- Promises
+- DOM events
+- HTTP requests
+
+Simplified traditional flow:
+
+```text
+Async operation
+      ↓
+Zone.js detects completion
+      ↓
+Angular runs change detection
+      ↓
+UI updates
+```
+
+### Why do we use it?
+
+Historically, Zone.js made Angular's change detection convenient because Angular didn't need developers to manually tell it every time an asynchronous operation completed.
+
+### Real project example
+
+Suppose an API request completes:
+
+```text
+.NET API
+   ↓
+HTTP response
+   ↓
+Observable callback
+   ↓
+Angular detects relevant async activity
+   ↓
+Change detection
+   ↓
+UI updated
+```
+
+### Code example
+
+```typescript
+this.memberService.getMembers()
+  .subscribe(members => {
+
+    this.members = members;
+
+  });
+```
+
+Traditionally, Zone.js helps Angular know that asynchronous activity occurred so Angular can perform its change-detection work.
+
+### Interview answer
+
+> **Zone.js is a library that historically helped Angular detect asynchronous operations and trigger change detection automatically. Modern Angular also supports zoneless change detection, so Zone.js is no longer a mandatory part of every Angular application's architecture.**
+
+### Common mistake
+
+❌ Saying:
+
+> Zone.js itself updates the DOM.
+
+Zone.js helps Angular become aware of asynchronous activity. **Angular's change-detection mechanism** is responsible for checking bindings and updating the UI.
+
+---
+
+# ⭐ 4-Year Experience Interview Scenario 1
+
+### Interviewer:
+
+> You have a parent MemberListComponent and a child MemberDetailsComponent. The parent needs to send the selected member to the child, and the child needs to notify the parent when the member is deleted. How would you implement it?
+
+### Answer
+
+I would use:
+
+```text
+Parent → Child
+@Input
+
+Child → Parent
+@Output + EventEmitter
+```
+
+Child:
+
+```typescript
+@Input() member!: Member;
+
+@Output()
+deleted = new EventEmitter<number>();
+
+deleteMember() {
+  this.deleted.emit(this.member.id);
+}
+```
+
+Parent:
+
+```html
+<app-member-details
+  [member]="selectedMember"
+  (deleted)="onMemberDeleted($event)">
+</app-member-details>
+```
+
+This provides clear and predictable component communication.
+
+---
+
+# ⭐ 4-Year Experience Interview Scenario 2
+
+### Interviewer:
+
+> A user is editing a member and accidentally clicks another menu item. You want to ask whether they really want to leave the page. What Angular feature would you use?
+
+### Answer:
+
+I would use a **CanDeactivate route guard**.
+
+Flow:
+
+```text
+User edits member
+       ↓
+Unsaved changes = true
+       ↓
+User navigates away
+       ↓
+CanDeactivate
+       ↓
+Confirm?
+   ├── Yes → Navigate
+   └── No  → Stay
+```
+
+---
+
+# ⭐ 4-Year Experience Interview Scenario 3
+
+### Interviewer:
+
+> Your Angular application has a large Reports module that most users don't open. How would you improve the initial application load?
+
+### Answer:
+
+> I would consider lazy loading the Reports feature so its code is downloaded only when the user navigates to the Reports section. This reduces the initial JavaScript bundle and can improve startup performance.
+
+---
+
+# ⭐ 4-Year Experience Interview Scenario 4
+
+### Interviewer:
+
+> What is the difference between ViewChild and ContentChild?
+
+### Best short answer:
+
+> **ViewChild accesses something from the component's own view, while ContentChild accesses something projected into the component through content projection using ng-content.**
+
+Remember:
+
+```text
+ViewChild
+→ My template
+
+ContentChild
+→ Parent-provided projected content
+```
+
+---
+
+# ⭐ 4-Year Experience Interview Scenario 5
+
+### Interviewer:
+
+> Your Angular application is becoming slow because there are many components and frequent UI updates. What would you investigate?
+
+### Answer:
+
+I would first identify where unnecessary change detection or rendering is occurring rather than blindly changing the strategy.
+
+I would investigate:
+
+- Component tree
+- Change detection
+- `OnPush`
+- Large lists
+- `@for` tracking
+- Expensive template expressions
+- Impure pipes
+- Unnecessary subscriptions
+- Large API responses
+- Unnecessary component updates
+
+Then I would apply optimizations based on profiling rather than assuming `OnPush` alone will solve the problem.
+
+---
+
+# ⭐ Important Connections
+
+## Component Communication
+
+```text
+                 Parent
+                /      \
+               ↓        ↑
+           @Input      @Output
+               ↓        ↑
+              Child + EventEmitter
+```
+
+---
+
+## Routing
+
+```text
+User
+ ↓
+RouterLink
+ ↓
+Angular Router
+ ↓
+Route Guard
+ ↓
+Resolver (if configured)
+ ↓
+Route Component
+ ↓
+RouterOutlet
+```
+
+---
+
+## Lifecycle
+
+```text
+Component Created
+       ↓
+ngOnChanges
+       ↓
+ngOnInit
+       ↓
+View Initialization
+       ↓
+ngAfterViewInit
+       ↓
+Component Runs
+       ↓
+ngOnDestroy
+       ↓
+Cleanup
+```
+
+> `ngOnChanges` is relevant when there are input-bound changes; it is not simply a mandatory step for every component lifecycle.
+
+---
+
+## Dependency Injection
+
+```text
+Component
+    ↓
+Request Service
+    ↓
+Angular Injector
+    ↓
+Search Injector Hierarchy
+    ↓
+Find Provider
+    ↓
+Return Dependency
+```
+
+---
+
+## Change Detection
+
+```text
+Application State Changes
+          ↓
+Change Detection
+          ↓
+Check Relevant Bindings
+          ↓
+Update View
+```
+
+---
+
+# ⭐ Quick Revision Table
+
+| Concept            | Main Purpose                                     |
+| ------------------ | ------------------------------------------------ |
+| Hierarchical DI    | Control dependency scope/instances               |
+| Angular Router     | Navigate between application routes              |
+| Route Guard        | Allow/block navigation                           |
+| CanActivate        | Control entering a route                         |
+| CanActivateChild   | Control child-route access                       |
+| CanDeactivate      | Control leaving a route                          |
+| CanMatch           | Control whether a route matches                  |
+| Lazy Loading       | Load feature code on demand                      |
+| Resolver           | Load route data before activation                |
+| RouterOutlet       | Placeholder for routed component                 |
+| RouterLink         | Navigate from template                           |
+| ActivatedRoute     | Read current route information                   |
+| Lifecycle Hooks    | Execute code at lifecycle stages                 |
+| ngOnInit           | Initialization                                   |
+| ngOnChanges        | React to input changes                           |
+| ngOnDestroy        | Cleanup                                          |
+| ngAfterViewInit    | Work with initialized view                       |
+| @Input             | Parent → Child                                   |
+| @Output            | Child → Parent                                   |
+| EventEmitter       | Emit child events                                |
+| ViewChild          | Access own view                                  |
+| ContentChild       | Access projected content                         |
+| ng-content         | Content projection                               |
+| Template Reference | Reference template element/directive/component   |
+| Change Detection   | Detect state changes and update UI               |
+| Default            | Broader normal change detection                  |
+| OnPush             | More targeted change detection                   |
+| Zone.js            | Historically helps Angular detect async activity |
+
+---
+
+# ⭐ One-Line Interview Revision
+
+```text
+Hierarchical DI → Dependency scope hierarchy
+Router          → Application navigation
+Guard           → Control navigation
+CanActivate     → Enter route
+CanDeactivate   → Leave route
+Lazy Loading    → Load feature when needed
+Resolver        → Load route data before activation
+RouterOutlet    → Render routed component
+RouterLink      → Navigate from template
+ActivatedRoute  → Read route information
+
+Lifecycle Hooks → Run code at lifecycle stages
+ngOnInit        → Initialize
+ngOnChanges     → React to @Input changes
+ngAfterViewInit → View is initialized
+ngOnDestroy     → Cleanup
+
+@Input          → Parent → Child
+@Output         → Child → Parent
+EventEmitter    → Emit child event
+ViewChild       → Access own view
+ContentChild    → Access projected content
+ng-content      → Content projection
+#variable       → Template reference
+
+Change Detection → Detect changes and update UI
+Default          → Normal/broader checking
+OnPush           → Targeted checking
+Zone.js          → Historically detects async activity for Angular
+```
+
+---
+
+# ⚠️ Modern Angular Interview Notes
+
+For a **4-year Angular interview**, know the traditional concepts because many enterprise projects still use them, but also understand the modern equivalents.
+
+### Traditional
+
+```html
+*ngIf
+*ngFor
+```
+
+### Modern
+
+```html
+@if (...)
+@for (...)
+```
+
+---
+
+### Traditional module-based application
+
+```text
+AppModule
+   ↓
+Feature Modules
+   ↓
+Components
+```
+
+### Modern Angular
+
+```text
+Application
+   ↓
+Standalone Components
+   ↓
+Standalone Routes
+```
+
+---
+
+### Traditional Zone-based change detection
+
+```text
+Async operation
+      ↓
+Zone.js
+      ↓
+Change Detection
+```
+
+### Modern Angular
+
+Angular can also run with **zoneless change detection**, so don't answer that Zone.js is mandatory for every Angular application.
+
+---
+
+# 🎯 Interview Rule for This Section
+
+When answering these topics in an interview, don't stop at the definition.
+
+Use this pattern:
+
+```text
+1. What is it?
+       ↓
+2. Why do we use it?
+       ↓
+3. Real project example
+       ↓
+4. Code/syntax
+       ↓
+5. Important limitation/common mistake
+```
+
+For a **4-year developer**, interviewers are much more likely to continue with:
+
+> "Okay, where have you used this in your project?"
+
+So your goal is not just to memorize the definition — be able to connect every concept to your **Angular + .NET Membership Management project**.
+
